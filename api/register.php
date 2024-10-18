@@ -3,6 +3,18 @@
 include '../config/database.php'; // Asegúrate de que la ruta sea correcta
 
 header('Content-Type: application/json; charset=utf-8');
+
+// Permitir solicitudes desde cualquier origen
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    // Responder a las solicitudes OPTIONS
+    exit(0); // Termina la ejecución para solicitudes OPTIONS
+}
+
+
 // Crear una instancia de la clase Database
 $database = new Database();
 $conn = $database->getConnection(); // Obtener la conexión
