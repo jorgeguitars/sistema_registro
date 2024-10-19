@@ -4,6 +4,10 @@ include '../config/database.php'; // incluye la conexión a la base de datos
 
 header('Content-Type: application/json; charset=utf-8');
 
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
 // instancia de la clase Database
 $database = new Database();
 $conn = $database->getConnection();
@@ -17,7 +21,7 @@ function isAuthenticated()
 
 // Obtener publicaciones (GET)
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    $stmt = $conn->prepare('SELECT p.id, p.title, p.content, p.category_id, u.name AS author FROM posts p JOIN users u ON p.user_id = u.id');
+    $stmt = $conn->prepare('SELECT p.id, p.title, p.content, p.categoryid, u.name AS author FROM posts p JOIN users u ON p.userid = u.id');
     $stmt->execute();
     $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

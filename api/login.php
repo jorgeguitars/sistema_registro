@@ -2,8 +2,19 @@
 
 include '../config/database.php'; // incluye la conexión a la base de datos
 
-// establece el encabezado para JSON y codificación UTF-8
+// Configuración de CORS
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET, DELETE, PUT, PATCH, OPTIONS');
+header('Access-Control-Allow-Headers: token, Content-Type');
+header('Access-Control-Max-Age: 1728000');
 header('Content-Type: application/json; charset=utf-8');
+
+// Manejo de solicitudes OPTIONS (preflight)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Content-Length: 0');
+    header('Content-Type: text/plain');
+    exit();
+}
 
 // instancia de la clase Database
 $database = new Database();
@@ -13,10 +24,12 @@ $conn = $database->getConnection();
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // se valida que las variables sean correctas
-    if (isset($_POST['email']) && isset($_POST['password'])) {
-        $email = $_POST['email'];
-        $password = $_POST['password'];
+    // Obtener el cuerpo de la solicitud y decodificar JSON
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (isset($data['email']) && isset($data['password'])) {
+        $email = $data['email'];
+        $password = $data['password'];
 
         // Preparar la consulta para obtener el usuario
         $stmt = $conn->prepare('SELECT id, name, password FROM users WHERE email = ?');
@@ -38,21 +51,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     [
                         'message' => 'Inicio de sesión exitoso',
                         'user' => [
+                            "success" => true,
                             'id' => $user['id'],
                             'name' => $user['name'],
                         ],
-                    ],
-                    JSON_UNESCAPED_UNICODE,
-                );
+                    ], JSON_UNESCAPED_UNICODE);
             } else {
-                echo json_encode(['message' => 'Contraseña incorrecta'], JSON_UNESCAPED_UNICODE);
+                // Respuesta de error de contraseña
+                echo json_encode([
+                    "success" => false,
+                    "message" => "Contraseña incorrecta"
+                ], JSON_UNESCAPED_UNICODE);
             }
         } else {
-            echo json_encode(['message' => 'Usuario no encontrado'], JSON_UNESCAPED_UNICODE);
+            // Respuesta de error de usuario no encontrado
+            echo json_encode([
+                "success" => false,
+                "message" => "Usuario no encontrado"
+            ], JSON_UNESCAPED_UNICODE);
         }
     } else {
-        echo json_encode(['message' => 'Email y contraseña son requeridos'], JSON_UNESCAPED_UNICODE);
+        // Respuesta de error si faltan parámetros
+        echo json_encode([
+            "success" => false,
+            "message" => "Email y contraseña son requeridos"
+        ], JSON_UNESCAPED_UNICODE);
     }
 } else {
-    echo json_encode(['message' => 'Método no permitido'], JSON_UNESCAPED_UNICODE);
+    // Respuesta de método no permitido
+    echo json_encode([
+        "success" => false,
+        "message" => "Método no permitido"
+    ], JSON_UNESCAPED_UNICODE);
 }
