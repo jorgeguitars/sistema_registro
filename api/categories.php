@@ -2,6 +2,11 @@
 
 include '../config/database.php'; // incluye la conexión a la base de datos
 
+// Permitir CORS
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
 header('Content-Type: application/json; charset=utf-8');
 
 // instancia de la clase Database
@@ -9,16 +14,18 @@ $database = new Database();
 $conn = $database->getConnection();
 
 // Manejo de diferentes métodos HTTP
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Obtener todas las categorías
     $stmt = $conn->prepare('SELECT id, name FROM categories');
     $stmt->execute();
     $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode($categories, JSON_UNESCAPED_UNICODE);
-} elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Crear nueva categoría
-    if (isset($_POST['name'])) {
-        $name = $_POST['name'];
+    $data = json_decode(file_get_contents('php://input'), true); // Obtener datos del cuerpo de la solicitud POST
+
+    if (isset($data['name'])) {
+        $name = $data['name'];
 
         $stmt = $conn->prepare('INSERT INTO categories (name) VALUES (?)');
         $stmt->bindParam(1, $name);
@@ -31,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } else {
         echo json_encode(['message' => 'Nombre de categoría es requerido'], JSON_UNESCAPED_UNICODE);
     }
-} elseif ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+} elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     // Actualizar categoría
-    parse_str(file_get_contents('php://input'), $_PUT); // Obtener datos del cuerpo de la solicitud PUT
+    $data = json_decode(file_get_contents('php://input'), true); // Obtener datos del cuerpo de la solicitud PUT
 
-    if (isset($_PUT['id']) && isset($_PUT['name'])) {
-        $id = $_PUT['id'];
-        $name = $_PUT['name'];
+    if (isset($data['id']) && isset($data['name'])) {
+        $id = $data['id'];
+        $name = $data['name'];
 
         $stmt = $conn->prepare('UPDATE categories SET name = ? WHERE id = ?');
         $stmt->bindParam(1, $name);
@@ -51,12 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } else {
         echo json_encode(['message' => 'ID y nombre de categoría son requeridos'], JSON_UNESCAPED_UNICODE);
     }
-} elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+} elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     // Eliminar categoría
-    parse_str(file_get_contents('php://input'), $_DELETE); // Obtener datos del cuerpo de la solicitud DELETE
+    $data = json_decode(file_get_contents('php://input'), true); // Obtener datos del cuerpo de la solicitud DELETE
 
-    if (isset($_DELETE['id'])) {
-        $id = $_DELETE['id'];
+    if (isset($data['id'])) {
+        $id = $data['id'];
 
         $stmt = $conn->prepare('DELETE FROM categories WHERE id = ?');
         $stmt->bindParam(1, $id);
